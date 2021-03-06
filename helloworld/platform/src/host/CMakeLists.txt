@@ -39,8 +39,10 @@ target_sources(helloworld-plt-host PRIVATE internal-platform.hpp internal-platfo
 target_link_libraries(
     helloworld-plt-host
     PUBLIC Helloworld::Platform::Interface
-    PRIVATE PlatformLibrary::Host
-    PRIVATE nlohmann_json::nlohmann_json
+    PRIVATE 
+        PlatformLibrary::Host
+        nlohmann_json::nlohmann_json 
+        BeeTree::Experimental
 )
 
 # Install

@@ -83,6 +83,8 @@ public:
 private:
     InternalPlatform() = default;
 
+    friend struct boot_api;
+
     void run_coms();
 
     std::thread      m_thread;
