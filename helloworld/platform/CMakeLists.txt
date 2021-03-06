@@ -27,7 +27,7 @@ target_include_directories(
 )
 
 # Add targets based on platform/architecture
-if(CMAKE_SYSTEM_PROCESSOR STREQUAL CMAKE_HOST_SYSTEM_PROCESSOR)
+if(NOT CMAKE_CROSSCOMPILING)
     add_subdirectory(src/host)
 elseif(CMAKE_SYSTEM_PROCESSOR STREQUAL "cortex-m0")
     add_subdirectory(src/stm32f030x8)

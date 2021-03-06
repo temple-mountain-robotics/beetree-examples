@@ -9,17 +9,15 @@
 #include <future>
 #include <nlohmann/json.hpp>
 
+#include "beetree/experimental/expected.hpp"
 #include "internal-platform.hpp"
 
 namespace helloworld {
 
-struct BootException
-{};
-
 // for convenience
 using json = nlohmann::json;
 
-void trace(const std::string& type, const std::string& name, bool value)
+void trace(const std::string &type, const std::string &name, bool value)
 {
     std::cout << type << ": " << name << " " << (value ? "ON" : "OFF") << std::endl;
 }
@@ -41,13 +39,13 @@ void InternalPlatform::DiscreteOutput::toggle()
 }
 bool InternalPlatform::DiscreteOutput::is_set() const { return this->value; }
 
-bool InternalPlatform::SerialDevice::open(const char* host, uint16_t port)
+bool InternalPlatform::SerialDevice::open(const char *host, uint16_t port)
 {
     return udp.open(host, port);
 }
 
 int32_t InternalPlatform::SerialDevice::write(std::size_t              address,
-                                              const uint8_t*           data,
+                                              const uint8_t *          data,
                                               std::size_t              len,
                                               bte::chrono::duration_ms timeout)
 {
@@ -58,7 +56,7 @@ int32_t InternalPlatform::SerialDevice::write(std::size_t              address,
     return 0;
 }
 int32_t InternalPlatform::SerialDevice::read(std::size_t              address,
-                                             uint8_t*                 data,
+                                             uint8_t *                data,
                                              std::size_t              len,
                                              bte::chrono::duration_ms timeout)
 {
@@ -67,54 +65,80 @@ int32_t InternalPlatform::SerialDevice::read(std::size_t              address,
 
 void InternalPlatform::SerialDevice::close() { udp.close(); }
 
-InternalPlatform& InternalPlatform::instance()
+InternalPlatform &InternalPlatform::instance()
 {
     static InternalPlatform s_instance;
     return s_instance;
 }
 
+struct boot_api
+{
+    struct error
+    {
+        constexpr error() = default;
+    };    
+    
+    using expected = bte::experimental::expected<void,error>;
+    using unexpected = bte::experimental::unexpected<error>;
+
+    static expected open_vcp_tx(InternalPlatform &ip)
+    {
+        if (!ip.vcp.open(ip.local_host(), ip.TX_PORT))
+        {
+            return unexpected(error{});
+        }
+        return expected();
+    }
+
+    static expected open_udp_rx(InternalPlatform &ip)
+    {
+        if (!ip.m_udpRX.open(ip.RX_PORT))
+        {
+            return unexpected(error{});
+        }
+        return expected();
+    }
+
+    static expected start_thread(InternalPlatform &ip)
+    {
+        auto p = std::promise<void>{};
+        auto f = p.get_future();
+
+        ip.m_thread = std::thread(
+            [&](std::promise<void> p) {
+                ip.m_is_running = true;
+                p.set_value();
+                ip.run_coms();
+            },
+            std::move(p));
+
+        if (std::future_status::ready != f.wait_for(std::chrono::seconds{1}))
+        {
+            return unexpected(error{});
+        }
+        return expected();
+    }
+};
+
 bool InternalPlatform::boot()
 {
+    // ensure the platform is in a good state ... so tear it down
     teardown();
 
-    try
-    {
-        if (!vcp.open(local_host(), TX_PORT))
-        {
-            throw BootException{};
-        }
+    // 1. open a vcp/serial port on the local host to transmit
+    auto expected = boot_api::open_vcp_tx(*this)
+                        // 2. open udp receiving port
+                        .and_then([&]() { return boot_api::open_udp_rx(*this); })
+                        // 3. start the receiving thread
+                        .and_then([&]() { return boot_api::start_thread(*this); });
 
-        if (!m_udpRX.open(RX_PORT))
-        {
-            throw BootException{};
-        }
-
-        {
-            std::promise<void> promise;
-
-            auto future = promise.get_future();
-
-            m_thread = std::thread(
-                [this](std::promise<void> p) {
-                    this->m_is_running = true;
-                    p.set_value();
-                    this->run_coms();
-                },
-                std::move(promise));
-
-            if (std::future_status::ready != future.wait_for(std::chrono::seconds{1}))
-            {
-                throw BootException{};
-            }
-        }
-    }
-    catch (BootException)
+    // teardown if something unexpected happened
+    if (!expected)
     {
         teardown();
-        return false;
-    }
+    };
 
-    return true;
+    return expected;
 }
 
 void InternalPlatform::run_coms()
@@ -128,10 +152,10 @@ void InternalPlatform::run_coms()
         if (nbytes > 0)
         {
             auto msg = json::parse(buffer.begin(), buffer.begin() + nbytes);
-            for (const auto& it : msg.items())
+            for (const auto &it : msg.items())
             {
-                const auto& key   = it.key();
-                const auto& value = it.value();
+                const auto &key   = it.key();
+                const auto &value = it.value();
                 if (key == "user_btn_depressed")
                 {
                     this->user_btn.set(value.get<bool>());
@@ -153,18 +177,18 @@ void InternalPlatform::teardown()
     vcp.close();
 }
 
-bool boot(Platform&) { return InternalPlatform::instance().boot(); }
-void teardown(Platform&) { InternalPlatform::instance().teardown(); }
+bool boot(Platform &) { return InternalPlatform::instance().boot(); }
+void teardown(Platform &) { InternalPlatform::instance().teardown(); }
 
 // > Clock
-bte::ISystemClock& Platform::clock() { return InternalPlatform::instance().clock; }
+bte::ISystemClock &Platform::clock() { return InternalPlatform::instance().clock; }
 
 // > Discrete Outputs
-bte::IDiscreteOutput& Platform::led() { return InternalPlatform::instance().led; }
-bte::IDiscreteOutput& Platform::debug() { return InternalPlatform::instance().debug; }
+bte::IDiscreteOutput &Platform::led() { return InternalPlatform::instance().led; }
+bte::IDiscreteOutput &Platform::debug() { return InternalPlatform::instance().debug; }
 
 // > Discrete Inputs
-bte::IDiscreteInput& Platform::user_btn() { return InternalPlatform::instance().user_btn; }
+bte::IDiscreteInput &Platform::user_btn() { return InternalPlatform::instance().user_btn; }
 
-bte::ISerialDevice& Platform::vcp() { return InternalPlatform::instance().vcp; }
+bte::ISerialDevice &Platform::vcp() { return InternalPlatform::instance().vcp; }
 }  // namespace helloworld
