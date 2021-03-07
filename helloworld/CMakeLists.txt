@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.14)
-project(aries-workspace C CXX ASM)
+project(helloworld-workspace C CXX ASM)
 
 # Policies
 cmake_policy(SET CMP0076 NEW) # allow relative paths in target_sources
@@ -14,13 +14,21 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS ON)
 
 # Import BeeTree
-message(STATUS "[helloworld] importing beetree from https://github.com/temple-mountain-robotics/beetree.git")
 include(FetchContent)
-FetchContent_Declare(
-    beetree
-    GIT_REPOSITORY https://github.com/temple-mountain-robotics/beetree.git
-    GIT_TAG master
-)
+if(NOT BTE_BEETREE_SOURCE_DIR)
+    message(STATUS "[helloworld] importing beetree from https://github.com/temple-mountain-robotics/beetree.git")
+    FetchContent_Declare(
+        beetree
+        GIT_REPOSITORY https://github.com/temple-mountain-robotics/beetree.git
+        GIT_TAG master
+    )
+else()
+    message(STATUS "[helloworld] importing beetree from ${BTE_BEETREE_SOURCE_DIR}")
+    FetchContent_Declare(
+        beetree
+        URL ${BTE_BEETREE_SOURCE_DIR}
+    )
+endif()
 FetchContent_MakeAvailable(beetree)
 
 # Add BeeTree's module path and this project's module path!
