@@ -9,10 +9,9 @@ Hello World! platform for the stm32f030x8 microcontroller
 Depndencies
 -----------
 
-* Beetree::Platform::Interface
+* Beetree::Platform
 * Helloworld::Platform::Interface
-* PlatformLibrary::Core
-* PlatformLibrary for stm32f0xx
+* Beetree::Platform::stm32f0xx
 
 Result Package
 --------------
@@ -39,8 +38,8 @@ target_sources(
 # ------------
 target_link_libraries(
     helloworld-plt-stm32f030x8
-    PUBLIC Beetree::Platform::Interface Helloworld::Platform::Interface
-    PRIVATE PlatformLibrary::Stm32f0xx
+    PUBLIC Beetree::Platform Helloworld::Platform::Interface
+    PRIVATE Beetree::Platform::stm32f0xx
 )
 
 # configure the stm firmware

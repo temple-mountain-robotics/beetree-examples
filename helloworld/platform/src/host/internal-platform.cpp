@@ -78,8 +78,8 @@ struct boot_api
         constexpr error() = default;
     };    
     
-    using expected = bte::experimental::expected<void,error>;
-    using unexpected = bte::experimental::unexpected<error>;
+    using expected = bte_experimental::expected<void,error>;
+    using unexpected = bte_experimental::unexpected<error>;
 
     static expected open_vcp_tx(InternalPlatform &ip)
     {

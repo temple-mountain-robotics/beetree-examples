@@ -11,9 +11,9 @@
 #include <string>
 #include <thread>
 #include "helloworld-platform/helloworld-platform.hpp"
-#include "platform-library/host/system-clock.hpp"
-#include "platform-library/host/udp-receive.hpp"
-#include "platform-library/host/udp-send.hpp"
+#include "beetree/platform/os/system-clock.hpp"
+#include "beetree/platform/os/udp-receive.hpp"
+#include "beetree/platform/os/udp-send.hpp"
 
 namespace helloworld {
 class InternalPlatform
