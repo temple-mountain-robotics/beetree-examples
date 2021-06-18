@@ -10,7 +10,7 @@ Depndencies
 -----------
 
 * Helloworld::Platform::Interface
-* PlatformLibrary::Host
+* Beetree::Platform:OS
 
 Result Package
 --------------
@@ -40,9 +40,9 @@ target_link_libraries(
     helloworld-plt-host
     PUBLIC Helloworld::Platform::Interface
     PRIVATE 
-        PlatformLibrary::Host
+        Beetree::Platform::OS
         nlohmann_json::nlohmann_json 
-        BeeTree::Experimental
+        Beetree::Experimental
 )
 
 # Install
