@@ -22,18 +22,9 @@ bool install(Application& app)
     // The 0 id signifies to beeview that this is the main tree.
     app.tree.configure_trace(0, true);
 
-    // configure our debug service to directly connect to the debug led and
-    // debug pin. See wiki on guidance on when to call hardward directly from a
-    // service.
-    app.debug_svc.configure(app.platform.led(), app.platform.debug());
-
     // install services and models to the black board for all nodes to use
     bte::blackboard::install_writeable<bte::IDebugService>(app.debug_svc);
     bte::blackboard::install_readonly<HelloworldModel>(app.helloworld_model);
-
-    // install the register banks
-    app.registry_provider[RegisterBankType::HelloWorld] = app.helloworld_register;
-    app.registry_trace.install(app.registry_provider);
 
     return true;  // successful app installation
 }
@@ -41,5 +32,5 @@ bool install(Application& app)
 void teardown(Application& app)
 {
     // do nothing
-}
+};
 }  // namespace helloworld

@@ -10,39 +10,16 @@
 #include <iostream>
 #include <string>
 #include <thread>
-#include "helloworld-platform/helloworld-platform.hpp"
 #include "beetree/platform/os/system-clock.hpp"
 #include "beetree/platform/os/udp-receive.hpp"
 #include "beetree/platform/os/udp-send.hpp"
+#include "helloworld-platform/helloworld-platform.hpp"
 
 namespace helloworld {
 class InternalPlatform
 {
 public:
     using SystemClock = host::SystemClock;
-    class DiscreteOutput : public bte::IDiscreteOutput
-    {
-    public:
-        DiscreteOutput(const std::string& n) : name(n) {}
-        void set() override;
-        void clear() override;
-        void toggle() override;
-        bool is_set() const override;
-
-    private:
-        std::string name;
-        bool        value = false;
-    };
-
-    class DiscreteInput : public bte::IDiscreteInput
-    {
-    public:
-        void set(bool value) { m_value = value; }
-        bool is_set() const override { return m_value; }
-
-    private:
-        std::atomic_bool m_value{false};
-    };
 
     /// The internal platform's Serial Device sends serial writes
     /// as UDP messages to the endpoint ipv4 127.0.0.1, port 1225
@@ -64,17 +41,37 @@ public:
         host::UDPSend udp;
     };
 
+    class DiscreteOutputController : public bte::IRegistryTxController
+    {
+    public:
+        DiscreteOutputController() = default;
+        void flush() override;
+
+        DiscreteOutputRegistry registry;
+    };
+
+    class DiscreteInputController : public bte::IRegistryRxController
+    {
+    public:
+        DiscreteInputController() = default;
+        
+        // do nothing in this platform implementation
+        // the platform updates d_ins via another thread
+        void sync() override { /* do nothing */ }
+
+        DiscreteInputRegistry registry;
+    };
+
     static InternalPlatform& instance();
     bool                     boot();
     void                     teardown();
 
     // > MEMBERS
 
-    SystemClock    clock;
-    DiscreteOutput led{"led"};
-    DiscreteOutput debug{"debug"};
-    DiscreteInput  user_btn;
-    SerialDevice   vcp;
+    SystemClock              clock;
+    SerialDevice             vcp;
+    DiscreteOutputController discrete_output_controller;
+    DiscreteInputController  discrete_input_controller;
 
     static constexpr const char* local_host() { return "127.0.0.1"; }
     static constexpr uint16_t    TX_PORT{1225};  // like christmas

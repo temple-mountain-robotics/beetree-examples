@@ -15,7 +15,6 @@
 #include "beetree/units/units.hpp"
 #include "helloworld-platform/helloworld-platform.hpp"
 #include "helloworld/helloworld-model.hpp"
-#include "helloworld/registry/helloworld-register-bank.hpp"
 #include "helloworld/registry/register-bank-type.hpp"
 
 // > service includes
@@ -51,9 +50,6 @@ public:
 
     // > Facilities
     // <N/A>
-
-    // > Registry
-    HelloWorldRegisterBank helloworld_register;
 };
 
 }  // namespace helloworld
