@@ -22,23 +22,6 @@ void trace(const std::string &type, const std::string &name, bool value)
     std::cout << type << ": " << name << " " << (value ? "ON" : "OFF") << std::endl;
 }
 
-void InternalPlatform::DiscreteOutput::set()
-{
-    this->value = true;
-    trace("DO", this->name, this->value);
-}
-void InternalPlatform::DiscreteOutput::clear()
-{
-    this->value = false;
-    trace("DO", this->name, this->value);
-}
-void InternalPlatform::DiscreteOutput::toggle()
-{
-    this->value = !this->value;
-    trace("DO", this->name, this->value);
-}
-bool InternalPlatform::DiscreteOutput::is_set() const { return this->value; }
-
 bool InternalPlatform::SerialDevice::open(const char *host, uint16_t port)
 {
     return udp.open(host, port);
@@ -158,11 +141,25 @@ void InternalPlatform::run_coms()
                 const auto &value = it.value();
                 if (key == "user_btn_depressed")
                 {
-                    this->user_btn.set(value.get<bool>());
+                    // Update the d_ins registry in a separate thread.
+                    // Because of this, the discrete_input_controller does not implement
+                    // it's sync method.
+                    auto dins = this->discrete_input_controller.registry.discrete_input_bank();
+                    dins[DiscreteInputValueKey::USER_BTN_DEPRESSED] = value.get<bool>();
                 }
             }
         }
     }
+}
+
+void InternalPlatform::DiscreteOutputController::flush() {
+    auto d_outs = registry.discrete_output_bank();
+
+    bool is_set = d_outs[DiscreteOutputValueKey::LED];
+    trace("DO", "led", is_set);
+
+    is_set = d_outs[DiscreteOutputValueKey::DEBUG_PIN];
+    trace("DO", "debug", is_set);
 }
 
 void InternalPlatform::teardown()
@@ -183,12 +180,11 @@ void teardown(Platform &) { InternalPlatform::instance().teardown(); }
 // > Clock
 bte::ISystemClock &Platform::clock() { return InternalPlatform::instance().clock; }
 
-// > Discrete Outputs
-bte::IDiscreteOutput &Platform::led() { return InternalPlatform::instance().led; }
-bte::IDiscreteOutput &Platform::debug() { return InternalPlatform::instance().debug; }
-
-// > Discrete Inputs
-bte::IDiscreteInput &Platform::user_btn() { return InternalPlatform::instance().user_btn; }
+// > Registry
+bte::IRegistryTxController& Platform::discrete_outputs_controller(){ return InternalPlatform::instance().discrete_output_controller; }
+bte::IRegistryRxController& Platform::discrete_inputs_controller(){ return InternalPlatform::instance().discrete_input_controller; }
+DiscreteInputRegistry& Platform::discrete_inputs(){ return InternalPlatform::instance().discrete_input_controller.registry; }
+DiscreteOutputRegistry& Platform::discrete_outputs(){ return InternalPlatform::instance().discrete_output_controller.registry; }
 
 bte::ISerialDevice &Platform::vcp() { return InternalPlatform::instance().vcp; }
 }  // namespace helloworld

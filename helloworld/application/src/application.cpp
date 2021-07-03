@@ -10,18 +10,23 @@
 namespace helloworld {
 
 void Application::sense()
-{
-    // update the model from the platform
-    helloworld_model.user_btn_depressed = platform.user_btn().is_set();
+{   
+    // synchronize the d_ins with the platform
+    platform.discrete_inputs_controller().sync(); 
 
-    // update the registry
-    this->helloworld_register[HelloWorldKeys::USER_BTN_DEPRESSED] =
-        helloworld_model.user_btn_depressed;
+    // update the model from the refreshed registry
+    helloworld_model.user_btn_depressed 
+        = platform.discrete_inputs().discrete_input_bank()[DiscreteInputValueKey::USER_BTN_DEPRESSED];
 }
 
 void Application::process() { bte::TreeX::loop(this->tree, 10_ms); }
 
-void Application::actuate() {}  // nothing to actuate
+void Application::actuate() { 
+    // signal to the platform to flush the discrete output registry to the hardware
+    platform.discrete_outputs().discrete_output_bank()[DiscreteOutputValueKey::LED] = debug_svc.model().is_led_set;
+    platform.discrete_outputs().discrete_output_bank()[DiscreteOutputValueKey::DEBUG_PIN] = debug_svc.model().is_debug_pin_set;
+    platform.discrete_outputs_controller().flush(); 
+}
 
 void Application::on_idle(bool first_time)
 {
