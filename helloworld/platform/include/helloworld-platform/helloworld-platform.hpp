@@ -8,12 +8,18 @@
 #pragma once
 
 #include "beetree/platform/basics/array-ref.hpp"
-#include "beetree/platform/basics/register-value.hpp"
+#include "beetree/platform/basics/registery.hpp"
 #include "beetree/platform/i-registry-controllers.hpp"
 #include "beetree/platform/i-serial-device.hpp"
 #include "beetree/platform/i-system-clock.hpp"
 
+
+
+
 namespace helloworld {
+
+
+
 // forward declaration
 class Platform;
 bool boot(Platform&);
@@ -41,6 +47,7 @@ constexpr std::size_t len()
 class DiscreteOutputRegistry
 {
 public:
+    
     struct Meta
     {
         static constexpr std::size_t VERSION{0};
@@ -54,21 +61,24 @@ public:
     };
 
     // direct access to the contiguous memory block
-    bte::array_ref<bte::RegisterValue> data() { return m_data; }
+    bte::array_ref<bte::registry::atomic_type> data() { return m_data; }
 
     // virtual access to the discrete ouput register bank
-    bte::array_ref<bte::RegisterValue> discrete_output_bank()
+    bte::array_ref<bte::registry::atomic_type> discrete_output_bank()
     {
         return {&m_data[Meta::DISCRETE_OUTPUT_BANK_BEGIN_IDX], Meta::DISCRETE_OUTPUT_BANK_LEN};
     }
 
 private:
-    std::array<bte::RegisterValue, Meta::NUM_VALUES> m_data;
+    // ensure atomic dword can be aligned like an array of uint32_t
+    static_assert(sizeof(bte::registry::atomic_type) == sizeof(bte::registry::value_type::data_type));
+    std::array<bte::registry::atomic_type, Meta::NUM_VALUES> m_data;
 };
 
 class DiscreteInputRegistry
 {
 public:
+
     struct Meta
     {
         static constexpr std::size_t VERSION{0};
@@ -83,16 +93,18 @@ public:
     };
 
     // direct access to the contiguous memory block
-    bte::array_ref<bte::RegisterValue> data() { return m_data; }
+    bte::array_ref<bte::registry::atomic_type> data() { return m_data; }
 
     // virtual access to the discrete input register bank
-    bte::array_ref<bte::RegisterValue> discrete_input_bank()
+    bte::array_ref<bte::registry::atomic_type> discrete_input_bank()
     {
         return {&m_data[Meta::DISCRETE_INPUT_BANK_BEGIN_IDX], Meta::DISCRETE_INPUT_BANK_LEN};
     }
 
 private:
-    std::array<bte::RegisterValue, Meta::NUM_VALUES> m_data;
+    // ensure atomic dword can be aligned like an array of uint32_t
+    static_assert(sizeof(bte::registry::atomic_type) == sizeof(bte::registry::value_type::data_type));
+    std::array<bte::registry::atomic_type, Meta::NUM_VALUES> m_data;
 };
 
 class Platform
