@@ -145,7 +145,7 @@ void InternalPlatform::run_coms()
                     // Because of this, the discrete_input_controller does not implement
                     // it's sync method.
                     auto dins = this->discrete_input_controller.registry.discrete_input_bank();
-                    dins[DiscreteInputValueKey::USER_BTN_DEPRESSED] = value.get<bool>();
+                    dins[DiscreteInputValueKey::USER_BTN_DEPRESSED] = bte::registry::make(value.get<bool>());
                 }
             }
         }
@@ -155,10 +155,11 @@ void InternalPlatform::run_coms()
 void InternalPlatform::DiscreteOutputController::flush() {
     auto d_outs = registry.discrete_output_bank();
 
-    bool is_set = d_outs[DiscreteOutputValueKey::LED];
+    namespace reg = bte::registry;
+    auto is_set = reg::as<bool>(d_outs[DiscreteOutputValueKey::LED]);
     trace("DO", "led", is_set);
 
-    is_set = d_outs[DiscreteOutputValueKey::DEBUG_PIN];
+    is_set = reg::as<bool>(d_outs[DiscreteOutputValueKey::DEBUG_PIN]);
     trace("DO", "debug", is_set);
 }
 
